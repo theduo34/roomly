@@ -6,6 +6,7 @@ import { DownloadSimpleIcon, EnvelopeSimpleIcon, FlagIcon, PhoneIcon, WalletIcon
 import { FlagGuestButton } from "@/components/shared/flag-guest-button"
 import { CheckInDialog } from "@/features/protected/receptionist/components/check-in-dialog"
 import { CheckoutDialog } from "@/features/protected/receptionist/components/checkout-dialog"
+import { useDashboardRole } from "@/features/protected/dashboard/context/role-context"
 import { useGuestFlags } from "@/features/protected/dashboard/hooks/use-guest-flags"
 import { useLocalBookings } from "@/features/protected/dashboard/hooks/use-local-bookings"
 import { paymentMethodLabels } from "@/lib/payment-methods"
@@ -75,6 +76,8 @@ export function GuestDetailView() {
   const decodedEmail = decodeURIComponent(email)
   const bookings = useLocalBookings()
   const flags = useGuestFlags()
+  const role = useDashboardRole()
+  const editable = role === "receptionist"
   const [checkInTarget, setCheckInTarget] = useState<Booking | null>(null)
   const [checkoutTarget, setCheckoutTarget] = useState<Booking | null>(null)
 
@@ -126,7 +129,7 @@ export function GuestDetailView() {
             <DownloadSimpleIcon size={14} />
             Export report
           </button>
-          <FlagGuestButton email={decodedEmail} name={name} />
+          {editable && <FlagGuestButton email={decodedEmail} name={name} />}
         </div>
       </div>
 
@@ -202,7 +205,7 @@ export function GuestDetailView() {
                   </p>
                 )}
 
-                {(booking.status === "confirmed" || booking.status === "checked_in") && (
+                {editable && (booking.status === "confirmed" || booking.status === "checked_in") && (
                   <div className="mt-3 flex items-center justify-end gap-2 border-t border-border pt-3">
                     {booking.status === "confirmed" && (
                       <button

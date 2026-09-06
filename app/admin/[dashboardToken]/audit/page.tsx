@@ -3,7 +3,7 @@ import { AuditLogView } from "@/features/protected/director/components/audit-log
 
 export default function AuditPage() {
   return (
-    <RoleGate allow={["director"]}>
+    <RoleGate allow={["manager", "director"]}>
       <AuditLogView />
     </RoleGate>
   );

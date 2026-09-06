@@ -3,7 +3,7 @@ import { GuestsDirectory } from "@/features/protected/guests/components/guests-d
 
 export default function GuestsPage() {
   return (
-    <RoleGate allow={["receptionist"]}>
+    <RoleGate allow={["receptionist", "manager", "director"]}>
       <GuestsDirectory />
     </RoleGate>
   );

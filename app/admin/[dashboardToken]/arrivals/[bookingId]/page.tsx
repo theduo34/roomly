@@ -3,7 +3,7 @@ import { BookingDetailView } from "@/features/protected/receptionist/components/
 
 export default function BookingDetailPage() {
   return (
-    <RoleGate allow={["receptionist"]}>
+    <RoleGate allow={["receptionist", "manager", "director"]}>
       <BookingDetailView />
     </RoleGate>
   );

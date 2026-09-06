@@ -3,7 +3,7 @@ import { GuestDetailView } from "@/features/protected/guests/components/guest-de
 
 export default function GuestDetailPage() {
   return (
-    <RoleGate allow={["receptionist"]}>
+    <RoleGate allow={["receptionist", "manager", "director"]}>
       <GuestDetailView />
     </RoleGate>
   );

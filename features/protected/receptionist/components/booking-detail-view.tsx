@@ -30,6 +30,7 @@ import { FlagGuestButton } from "@/components/shared/flag-guest-button"
 import { CheckInDialog } from "@/features/protected/receptionist/components/check-in-dialog"
 import { CheckoutDialog } from "@/features/protected/receptionist/components/checkout-dialog"
 import { ChangeRoomDialog } from "@/features/protected/receptionist/components/change-room-dialog"
+import { useDashboardRole } from "@/features/protected/dashboard/context/role-context"
 import { useLocalBookings } from "@/features/protected/dashboard/hooks/use-local-bookings"
 import { useGuestFlags } from "@/features/protected/dashboard/hooks/use-guest-flags"
 import { useStaffName } from "@/features/auth/hooks/use-role"
@@ -69,11 +70,15 @@ function DetailField({ icon: Icon, label, value }: { icon: IconComponent; label:
   );
 }
 
-function VehiclePlateEditor({ booking }: { booking: Booking }) {
+function VehiclePlateEditor({ booking, editable }: { booking: Booking; editable: boolean }) {
   const { dashboardToken } = useParams<{ dashboardToken: string }>()
   const staffName = useStaffName()
   const [open, setOpen] = useState(false)
   const [plate, setPlate] = useState(booking.vehiclePlate ?? "")
+
+  if (!editable) {
+    return <span className="text-sm font-medium text-foreground">{booking.vehiclePlate ?? "Not recorded"}</span>;
+  }
 
   function save() {
     const value = plate.trim().toUpperCase()
@@ -129,6 +134,8 @@ export function BookingDetailView() {
   const { bookingId } = useParams<{ dashboardToken: string; bookingId: string }>()
   const bookings = useLocalBookings()
   const flags = useGuestFlags()
+  const role = useDashboardRole()
+  const editable = role === "receptionist"
   const [checkInOpen, setCheckInOpen] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [changeRoomOpen, setChangeRoomOpen] = useState(false)
@@ -186,7 +193,7 @@ export function BookingDetailView() {
           <span className={cn("rounded-full px-3 py-1 text-xs font-medium", statusStyles[booking.status])}>
             {statusLabels[booking.status]}
           </span>
-          <FlagGuestButton email={booking.guestEmail} name={booking.guestName} />
+          {editable && <FlagGuestButton email={booking.guestEmail} name={booking.guestName} />}
         </div>
       </div>
 
@@ -228,7 +235,7 @@ export function BookingDetailView() {
               <CarIcon size={16} />
               Vehicle plate
             </span>
-            <VehiclePlateEditor booking={booking} />
+            <VehiclePlateEditor booking={booking} editable={editable} />
           </div>
 
           {booking.specialRequests && (
@@ -277,38 +284,44 @@ export function BookingDetailView() {
             <p className="font-mono text-base font-semibold tracking-wide text-foreground">{booking.qrCode}</p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="font-heading text-base font-semibold text-foreground">Actions</h2>
-            <div className="mt-3 flex flex-col gap-2">
-              {booking.status === "confirmed" && (
-                <Button onClick={() => setCheckInOpen(true)} className="w-full">
-                  Check in
-                </Button>
-              )}
-              {booking.status === "checked_in" && (
-                <>
-                  <Button onClick={() => setCheckoutOpen(true)} className="w-full">
-                    Check out
+          {editable && (
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h2 className="font-heading text-base font-semibold text-foreground">Actions</h2>
+              <div className="mt-3 flex flex-col gap-2">
+                {booking.status === "confirmed" && (
+                  <Button onClick={() => setCheckInOpen(true)} className="w-full">
+                    Check in
                   </Button>
-                  <Button variant="outline" onClick={() => setChangeRoomOpen(true)} className="w-full">
-                    Change room
-                  </Button>
-                </>
-              )}
-              {booking.status === "checked_out" && (
-                <p className="text-sm text-muted-foreground">Guest has checked out.</p>
-              )}
-              {booking.status === "cancelled" && (
-                <p className="text-sm text-muted-foreground">This booking was cancelled.</p>
-              )}
+                )}
+                {booking.status === "checked_in" && (
+                  <>
+                    <Button onClick={() => setCheckoutOpen(true)} className="w-full">
+                      Check out
+                    </Button>
+                    <Button variant="outline" onClick={() => setChangeRoomOpen(true)} className="w-full">
+                      Change room
+                    </Button>
+                  </>
+                )}
+                {booking.status === "checked_out" && (
+                  <p className="text-sm text-muted-foreground">Guest has checked out.</p>
+                )}
+                {booking.status === "cancelled" && (
+                  <p className="text-sm text-muted-foreground">This booking was cancelled.</p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      <CheckInDialog booking={checkInOpen ? booking : null} onOpenChange={setCheckInOpen} />
-      <CheckoutDialog booking={checkoutOpen ? booking : null} onOpenChange={setCheckoutOpen} />
-      <ChangeRoomDialog booking={changeRoomOpen ? booking : null} onOpenChange={setChangeRoomOpen} />
+      {editable && (
+        <>
+          <CheckInDialog booking={checkInOpen ? booking : null} onOpenChange={setCheckInOpen} />
+          <CheckoutDialog booking={checkoutOpen ? booking : null} onOpenChange={setCheckoutOpen} />
+          <ChangeRoomDialog booking={changeRoomOpen ? booking : null} onOpenChange={setChangeRoomOpen} />
+        </>
+      )}
     </div>
   );
 }
