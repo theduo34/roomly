@@ -42,7 +42,7 @@ export function UpcomingCalendarCard() {
     }
     return [...byDate.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .slice(0, 5)
+      .slice(0, 4)
   }, [bookings, today]);
 
   return (

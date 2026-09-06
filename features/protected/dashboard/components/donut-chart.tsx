@@ -24,7 +24,7 @@ export function DonutChart({
   let cumulative = 0
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex h-full flex-1 flex-col items-center gap-4">
       <div className="relative">
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-hidden="true">
           <circle
@@ -65,11 +65,12 @@ export function DonutChart({
         </div>
       </div>
 
-      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+      <ul className="mt-auto grid w-full grid-cols-1 gap-1.5 rounded-lg bg-secondary/60 p-3 sm:grid-cols-2">
         {segments.map((segment) => (
-          <li key={segment.id} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: segment.color }} />
-            {segment.value} {segment.label}
+          <li key={segment.id} className="flex items-center gap-2 text-xs">
+            <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: segment.color }} />
+            <span className="text-muted-foreground">{segment.label}</span>
+            <span className="ml-auto font-semibold text-foreground">{segment.value}</span>
           </li>
         ))}
       </ul>

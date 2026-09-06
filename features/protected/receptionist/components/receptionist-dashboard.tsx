@@ -4,10 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import {
-  BedIcon,
-  BroomIcon,
-  CalendarCheckIcon,
-  DoorOpenIcon,
   DotsThreeIcon,
   FunnelIcon,
   MagnifyingGlassIcon,
@@ -16,8 +12,8 @@ import {
 } from "@phosphor-icons/react/ssr"
 import { Input } from "@/components/ui/input"
 import { StatCard } from "@/features/protected/dashboard/components/stat-card"
-import { DonutChart } from "@/features/protected/dashboard/components/donut-chart"
 import { OccupancyTrendChart } from "@/features/protected/receptionist/components/occupancy-trend-chart"
+import { RoomDistributionCard } from "@/features/protected/receptionist/components/room-distribution-card"
 import { UpcomingCalendarCard } from "@/features/protected/receptionist/components/upcoming-calendar-card"
 import { roomStatusConfig } from "@/components/shared/status-badge"
 import { useLocalBookings } from "@/features/protected/dashboard/hooks/use-local-bookings"
@@ -26,6 +22,12 @@ import { cn, formatDate } from "@/lib/utils"
 import type { RoomStatus } from "@/lib/types"
 
 const dateFilters = ["Today", "This week", "This month"]
+
+const comparedToLabel: Record<string, string> = {
+  Today: "today",
+  "This week": "this week",
+  "This month": "this month",
+}
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10)
@@ -72,56 +74,73 @@ export function ReceptionistDashboard() {
         </div>
         <Link
           href={`/admin/${dashboardToken}/arrivals`}
-          className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+          className="flex size-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/80 sm:size-auto sm:px-4 sm:py-2"
         >
           <PlusIcon size={16} />
-          New reservation
+          <span className="hidden sm:inline">New reservation</span>
         </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Arrivals today" value={String(arrivalsToday.length)} icon={CalendarCheckIcon} tone="primary" />
-        <StatCard label="Occupied rooms" value={String(occupied)} icon={DoorOpenIcon} tone="destructive" />
-        <StatCard label="Available rooms" value={String(available)} icon={BedIcon} tone="success" />
-        <StatCard label="Needs cleaning" value={String(needsCleaning)} icon={BroomIcon} tone="purple" />
+        <StatCard
+          label="Arrivals today"
+          value={String(arrivalsToday.length)}
+          tone="primary"
+          trend={{ direction: "up", value: "+12.0%", comparedTo: comparedToLabel[activeFilter] }}
+        />
+        <StatCard
+          label="Occupied rooms"
+          value={String(occupied)}
+          tone="destructive"
+          trend={{ direction: "down", value: "-5.2%", comparedTo: comparedToLabel[activeFilter] }}
+        />
+        <StatCard
+          label="Available rooms"
+          value={String(available)}
+          tone="success"
+          trend={{ direction: "up", value: "+8.7%", comparedTo: comparedToLabel[activeFilter] }}
+        />
+        <StatCard
+          label="Needs cleaning"
+          value={String(needsCleaning)}
+          tone="purple"
+          trend={{ direction: "up", value: "+3.9%", comparedTo: comparedToLabel[activeFilter] }}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <OccupancyTrendChart />
+        <div className="h-full lg:col-span-2">
+          <OccupancyTrendChart activeFilter={activeFilter} />
         </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h2 className="font-heading text-base font-semibold text-foreground">Room distribution</h2>
-          <div className="mt-4">
-            <DonutChart segments={roomSegments} centerLabel="rooms" />
-          </div>
-        </div>
+        <RoomDistributionCard segments={roomSegments} centerLabel="rooms" activeFilter={activeFilter} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-5 lg:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-heading text-base font-semibold text-foreground">Today&apos;s reservations</h2>
             <div className="flex items-center gap-2">
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-none">
                 <MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search…" className="h-8 w-36 pl-8 text-sm" />
+                <Input placeholder="Search…" className="h-8 w-full pl-8 text-sm sm:w-56" />
               </div>
               <button
                 type="button"
-                className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2 text-muted-foreground hover:bg-muted sm:px-3"
               >
                 <FunnelIcon size={16} />
+                <span className="hidden text-xs font-medium sm:inline">Filter</span>
               </button>
               <button
                 type="button"
-                className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2 text-muted-foreground hover:bg-muted sm:px-3"
               >
                 <SortAscendingIcon size={16} />
+                <span className="hidden text-xs font-medium sm:inline">Sort</span>
               </button>
               <button
                 type="button"
-                className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
               >
                 <DotsThreeIcon size={16} />
               </button>
