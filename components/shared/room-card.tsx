@@ -18,7 +18,7 @@ export function RoomCard({ room }: { room: Room }) {
     <Link href={`/rooms/${room.id}`} className="group block">
       <div className="relative aspect-square w-full overflow-hidden rounded-xl">
         <Image
-          src={room.images[0]}
+          src={room.images[0].url}
           alt={room.name}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"

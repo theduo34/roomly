@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import useEmblaCarousel from "embla-carousel-react"
-import { CaretLeftIcon, CaretRightIcon, CheckCircleIcon, UsersIcon } from "@phosphor-icons/react/ssr"
+import { CaretLeftIcon, CaretRightIcon, CheckCircleIcon, ImagesIcon, UsersIcon } from "@phosphor-icons/react/ssr"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { SaveButton } from "@/components/shared/save-button"
@@ -45,10 +45,10 @@ function RoomCarousel({ room }: { room: Room }) {
     <div className="relative overflow-hidden rounded-xl border border-border">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
-          {images.map((src, index) => (
-            <div key={src} className="relative aspect-4/3 min-w-0 flex-[0_0_100%]">
+          {images.map((image, index) => (
+            <div key={image.url} className="relative aspect-4/3 min-w-0 flex-[0_0_100%]">
               <Image
-                src={src}
+                src={image.url}
                 alt={`${name} photo ${index + 1}`}
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
@@ -78,10 +78,10 @@ function RoomCarousel({ room }: { room: Room }) {
           >
             <CaretRightIcon className="size-4" />
           </button>
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
-            {images.map((src, index) => (
+          <div className="absolute bottom-3 left-3 flex gap-1.5">
+            {images.map((image, index) => (
               <span
-                key={src}
+                key={image.url}
                 className={cn(
                   "size-1.5 rounded-full bg-background/70",
                   index === selectedIndex && "bg-primary"
@@ -91,6 +91,13 @@ function RoomCarousel({ room }: { room: Room }) {
           </div>
         </>
       )}
+      <Link
+        href={`/rooms/${room.id}/photos`}
+        className="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-full bg-background/90 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm hover:bg-background"
+      >
+        <ImagesIcon size={14} />
+        See all photos
+      </Link>
     </div>
   );
 }

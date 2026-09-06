@@ -13,7 +13,7 @@ const typeOrder: { value: RoomType; label: string }[] = [
 export function RoomTypes() {
   const tiles = typeOrder.map(({ value, label }) => {
     const matches = rooms.filter((room) => room.type === value)
-    return { value, label, count: matches.length, image: matches[0]?.images[0] }
+    return { value, label, count: matches.length, image: matches[0]?.images[0]?.url }
   })
 
   return (

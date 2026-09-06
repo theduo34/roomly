@@ -121,6 +121,7 @@ export function BookingForm({ room }: { room: Room }) {
       status: "confirmed",
       qrCode: reference,
       bookedAt: new Date().toISOString(),
+      paymentMethod: "card",
     }
 
     appendBooking(booking)
@@ -195,7 +196,7 @@ export function BookingForm({ room }: { room: Room }) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <div className="relative size-16 shrink-0 overflow-hidden rounded-lg">
-              <Image src={room.images[0]} alt={room.name} fill className="object-cover" />
+              <Image src={room.images[0].url} alt={room.name} fill className="object-cover" />
             </div>
             <div className="min-w-0">
               <p className="truncate font-heading font-semibold text-foreground">{room.name}</p>
