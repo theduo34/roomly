@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation"
 import {
   BuildingsIcon,
   CalendarCheckIcon,
+  CarIcon,
   ChartLineUpIcon,
   ClipboardTextIcon,
   ClockCounterClockwiseIcon,
   DoorOpenIcon,
+  ReceiptIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react/ssr"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -22,8 +24,10 @@ const navByRole: Record<StaffRole, NavItem[]> = {
   receptionist: [
     { label: "Dashboard", section: "dashboard", icon: DoorOpenIcon },
     { label: "Arrivals", section: "arrivals", icon: CalendarCheckIcon },
+    { label: "Bookings", section: "bookings", icon: ReceiptIcon },
     { label: "Rooms", section: "rooms", icon: BuildingsIcon },
     { label: "Guests", section: "guests", icon: UsersThreeIcon },
+    { label: "Vehicle log", section: "vehicle-log", icon: CarIcon },
   ],
   manager: [
     { label: "Dashboard", section: "dashboard", icon: ChartLineUpIcon },
