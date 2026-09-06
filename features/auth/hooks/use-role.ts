@@ -6,6 +6,16 @@ import type { StaffRole } from "@/lib/types"
 const ROLE_KEY = "roomly_role"
 const TOKEN_KEY = "roomly_session_token"
 const NAME_KEY = "roomly_staff_name"
+const LOGIN_PATH_KEY = "roomly_login_path"
+
+/** The staff login URL is a secret path — remember it from sign-in so logout can return there. */
+export function getStoredLoginPath(): string | null {
+  try {
+    return localStorage.getItem(LOGIN_PATH_KEY)
+  } catch {
+    return null
+  }
+}
 
 function readRole(): StaffRole | null {
   try {
@@ -25,11 +35,12 @@ export function useRole() {
     setRole(readRole())
   }, [])
 
-  const login = useCallback((nextRole: StaffRole, name: string) => {
+  const login = useCallback((nextRole: StaffRole, name: string, loginToken: string) => {
     const token = crypto.randomUUID()
     localStorage.setItem(ROLE_KEY, nextRole)
     localStorage.setItem(TOKEN_KEY, token)
     localStorage.setItem(NAME_KEY, name)
+    localStorage.setItem(LOGIN_PATH_KEY, `/${loginToken}/login`)
     setRole(nextRole)
     return token
   }, [])

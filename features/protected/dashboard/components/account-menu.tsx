@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useRole, useStaffName } from "@/features/auth/hooks/use-role"
+import { getStoredLoginPath, useRole, useStaffName } from "@/features/auth/hooks/use-role"
 import { cn } from "@/lib/utils"
 import type { StaffRole } from "@/lib/types"
 
@@ -61,8 +61,9 @@ export function AccountMenu({
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   function handleSignOut() {
+    const loginPath = getStoredLoginPath()
     logout()
-    router.push("/")
+    router.push(loginPath ?? "/")
   }
 
   const displayName = name || roleLabels[role]

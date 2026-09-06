@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -34,6 +34,7 @@ function delay(ms: number) {
 
 export function SignInForm() {
   const router = useRouter()
+  const { loginToken } = useParams<{ loginToken: string }>()
   const { login } = useRole()
   const {
     register,
@@ -59,7 +60,7 @@ export function SignInForm() {
     }
 
     toast.success("Signed in — taking you to your dashboard.")
-    const token = login(account.role, account.name)
+    const token = login(account.role, account.name, loginToken)
     router.push(`/admin/${token}/dashboard`)
   }
 
