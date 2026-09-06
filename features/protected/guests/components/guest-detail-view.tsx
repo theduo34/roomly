@@ -56,6 +56,7 @@ function downloadGuestReport(name: string, email: string, phone: string, booking
       `  Total ${formatCurrency(b.totalAmount)} · Paid ${formatCurrency(b.depositPaid)} · ` +
         `Payment method: ${paymentMethodLabels[b.paymentMethod]}`,
       `  Booked on: ${formatDate(b.bookedAt)}${b.vehiclePlate ? ` · Vehicle: ${b.vehiclePlate}` : ""}`,
+      ...(b.specialRequests ? [`  Special requests: ${b.specialRequests}`] : []),
       "",
     ]),
   ]
@@ -194,6 +195,12 @@ export function GuestDetailView() {
                   <Field label="Booked on" value={formatDate(booking.bookedAt)} />
                   {booking.vehiclePlate && <Field label="Vehicle plate" value={booking.vehiclePlate} />}
                 </div>
+                {booking.specialRequests && (
+                  <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Special requests: </span>
+                    {booking.specialRequests}
+                  </p>
+                )}
 
                 {(booking.status === "confirmed" || booking.status === "checked_in") && (
                   <div className="mt-3 flex items-center justify-end gap-2 border-t border-border pt-3">

@@ -1,0 +1,266 @@
+"use client"
+
+import { useMemo, useState } from "react"
+import { useParams } from "next/navigation"
+import { Controller, useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { toast } from "sonner"
+import { PlusIcon } from "@phosphor-icons/react/ssr"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useRooms } from "@/features/protected/rooms/hooks/use-rooms"
+import { useStaffName } from "@/features/auth/hooks/use-role"
+import { appendAuditLog } from "@/lib/audit-log-store"
+import { appendBooking } from "@/lib/bookings-store"
+import { paymentMethodOptions } from "@/lib/payment-methods"
+import { setRoomStatus } from "@/lib/room-status-store"
+import { calculateNights, formatCurrency, formatDate, generateBookingReference } from "@/lib/utils"
+import type { Booking } from "@/lib/types"
+
+const reservationSchema = z
+  .object({
+    guestName: z.string().min(2, "Enter the guest's full name"),
+    guestEmail: z.email("Enter a valid email"),
+    guestPhone: z.string().min(7, "Enter a valid phone number"),
+    roomId: z.string().min(1, "Assign a room"),
+    checkIn: z.string().min(1, "Select a check-in date"),
+    checkOut: z.string().min(1, "Select a check-out date"),
+    paymentMethod: z.enum(["card", "mobile_money", "cash", "bank_transfer"]),
+    specialRequests: z.string().optional(),
+  })
+
+type ReservationValues = z.infer<typeof reservationSchema>
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+export function NewReservationDialog() {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
+  const [open, setOpen] = useState(false)
+  const rooms = useRooms()
+  const staffName = useStaffName()
+  const availableRooms = useMemo(() => rooms.filter((room) => room.status === "available"), [rooms])
+  const today = todayIso()
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ReservationValues>({
+    resolver: zodResolver(reservationSchema),
+    defaultValues: {
+      guestName: "",
+      guestEmail: "",
+      guestPhone: "",
+      roomId: "",
+      checkIn: today,
+      checkOut: "",
+      paymentMethod: "card",
+      specialRequests: "",
+    },
+  })
+
+  const roomId = watch("roomId")
+  const checkIn = watch("checkIn")
+  const checkOut = watch("checkOut")
+  const room = availableRooms.find((r) => r.id === roomId)
+
+  const { nights, total, deposit } = useMemo(() => {
+    const n = room && checkIn && checkOut ? calculateNights(checkIn, checkOut) : 0
+    const t = n > 0 && room ? n * room.price : 0
+    return { nights: n, total: t, deposit: Math.round(t * 0.2) }
+  }, [room, checkIn, checkOut])
+
+  function onSubmit(values: ReservationValues) {
+    const selectedRoom = availableRooms.find((r) => r.id === values.roomId)
+    if (!selectedRoom) return
+
+    const booking: Booking = {
+      id: `booking-${Date.now()}`,
+      guestName: values.guestName,
+      guestEmail: values.guestEmail,
+      guestPhone: values.guestPhone,
+      roomId: selectedRoom.id,
+      roomName: selectedRoom.name,
+      checkIn: values.checkIn,
+      checkOut: values.checkOut,
+      nights,
+      totalAmount: total,
+      depositPaid: deposit,
+      status: "confirmed",
+      qrCode: generateBookingReference(),
+      bookedAt: new Date().toISOString(),
+      paymentMethod: values.paymentMethod,
+      ...(values.specialRequests?.trim() ? { specialRequests: values.specialRequests.trim() } : {}),
+    }
+
+    appendBooking(booking)
+    setRoomStatus(selectedRoom.id, "reserved")
+    appendAuditLog({
+      action: `Created reservation — ${selectedRoom.name}`,
+      performedBy: staffName || "Receptionist",
+      role: "receptionist",
+      link: `/admin/${dashboardToken}/arrivals/${booking.id}`,
+    })
+    toast.success(`${values.guestName}'s reservation is confirmed — ${selectedRoom.name} reserved.`)
+    reset()
+    setOpen(false)
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next)
+        if (!next) reset()
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button>
+          <PlusIcon />
+          <span className="hidden sm:inline">New reservation</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>New reservation</DialogTitle>
+            <DialogDescription>
+              Reserve a room for a guest arriving later. A 20% deposit confirms the booking.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="nr-guestName">Guest name</Label>
+            <Input id="nr-guestName" placeholder="Jane Doe" {...register("guestName")} />
+            {errors.guestName && <p className="text-sm text-destructive">{errors.guestName.message}</p>}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="nr-guestEmail">Email</Label>
+              <Input id="nr-guestEmail" type="email" placeholder="jane@example.com" {...register("guestEmail")} />
+              {errors.guestEmail && <p className="text-sm text-destructive">{errors.guestEmail.message}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="nr-guestPhone">Phone number</Label>
+              <Input id="nr-guestPhone" type="tel" placeholder="+233 20 000 0000" {...register("guestPhone")} />
+              {errors.guestPhone && <p className="text-sm text-destructive">{errors.guestPhone.message}</p>}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="nr-room">Assign room</Label>
+            <Controller
+              name="roomId"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="nr-room" className="w-full">
+                    <SelectValue placeholder="Choose an available room" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRooms.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.name} · {formatCurrency(r.price)}/night
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.roomId && <p className="text-sm text-destructive">{errors.roomId.message}</p>}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="nr-checkIn">Check-in</Label>
+              <Input id="nr-checkIn" type="date" min={today} {...register("checkIn")} />
+              {errors.checkIn && <p className="text-sm text-destructive">{errors.checkIn.message}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="nr-checkOut">Check-out</Label>
+              <Input id="nr-checkOut" type="date" min={checkIn || today} {...register("checkOut")} />
+              {errors.checkOut && <p className="text-sm text-destructive">{errors.checkOut.message}</p>}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="nr-payment">Deposit payment method</Label>
+            <Controller
+              name="paymentMethod"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="nr-payment" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethodOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="nr-requests">Special requests (optional)</Label>
+            <Textarea
+              id="nr-requests"
+              placeholder="Extra bed, late checkout, room preferences…"
+              {...register("specialRequests")}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">
+                {nights > 0 ? `${nights} night${nights === 1 ? "" : "s"}` : "Select a room and dates"}
+              </span>
+              <span className="font-medium text-foreground">{total > 0 ? formatCurrency(total) : "—"}</span>
+            </div>
+            {total > 0 && (
+              <div className="flex items-center justify-between border-t border-border pt-2">
+                <span className="text-muted-foreground">Deposit due now (20%)</span>
+                <span className="font-semibold text-foreground">{formatCurrency(deposit)}</span>
+              </div>
+            )}
+            {checkIn && (
+              <p className="text-xs text-muted-foreground">Arriving {formatDate(checkIn)}</p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting || nights <= 0}>
+              Create reservation
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,17 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import {
-  DotsThreeIcon,
-  FunnelIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
   MagnifyingGlassIcon,
-  PlusIcon,
   SortAscendingIcon,
+  SortDescendingIcon,
 } from "@phosphor-icons/react/ssr"
 import { Input } from "@/components/ui/input"
 import { StatCard } from "@/features/protected/dashboard/components/stat-card"
+import { NewReservationDialog } from "@/features/protected/receptionist/components/new-reservation-dialog"
 import { OccupancyTrendChart } from "@/features/protected/receptionist/components/occupancy-trend-chart"
 import { RoomDistributionCard } from "@/features/protected/receptionist/components/room-distribution-card"
 import { UpcomingCalendarCard } from "@/features/protected/receptionist/components/upcoming-calendar-card"
@@ -22,6 +23,7 @@ import { cn, formatDate } from "@/lib/utils"
 import type { RoomStatus } from "@/lib/types"
 
 const dateFilters = ["Today", "This week", "This month"]
+const RESERVATIONS_PAGE_SIZE = 5
 
 const comparedToLabel: Record<string, string> = {
   Today: "today",
@@ -35,11 +37,33 @@ function todayIso() {
 
 export function ReceptionistDashboard() {
   const { dashboardToken } = useParams<{ dashboardToken: string }>()
+  const router = useRouter()
   const bookings = useLocalBookings()
   const rooms = useRooms()
   const today = todayIso()
   const [activeFilter, setActiveFilter] = useState(dateFilters[0])
+  const [reservationQuery, setReservationQuery] = useState("")
+  const [sortDescending, setSortDescending] = useState(false)
+  const [reservationsPage, setReservationsPage] = useState(0)
   const arrivalsToday = bookings.filter((b) => b.checkIn === today && b.status === "confirmed")
+
+  const visibleReservations = useMemo(() => {
+    const q = reservationQuery.trim().toLowerCase()
+    const filtered = arrivalsToday.filter(
+      (b) => !q || `${b.guestName} ${b.roomName}`.toLowerCase().includes(q)
+    )
+    return [...filtered].sort((a, b) => {
+      const diff = a.checkOut.localeCompare(b.checkOut)
+      return sortDescending ? -diff : diff
+    })
+  }, [arrivalsToday, reservationQuery, sortDescending])
+
+  const reservationsTotalPages = Math.max(1, Math.ceil(visibleReservations.length / RESERVATIONS_PAGE_SIZE))
+  const reservationsCurrentPage = Math.min(reservationsPage, reservationsTotalPages - 1)
+  const pageReservations = visibleReservations.slice(
+    reservationsCurrentPage * RESERVATIONS_PAGE_SIZE,
+    reservationsCurrentPage * RESERVATIONS_PAGE_SIZE + RESERVATIONS_PAGE_SIZE
+  )
 
   const occupied = rooms.filter((r) => r.status === "occupied").length
   const available = rooms.filter((r) => r.status === "available").length
@@ -72,13 +96,7 @@ export function ReceptionistDashboard() {
             </button>
           ))}
         </div>
-        <Link
-          href={`/admin/${dashboardToken}/arrivals`}
-          className="flex size-9 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/80 sm:size-auto sm:px-4 sm:py-2"
-        >
-          <PlusIcon size={16} />
-          <span className="hidden sm:inline">New reservation</span>
-        </Link>
+        <NewReservationDialog />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -122,32 +140,31 @@ export function ReceptionistDashboard() {
             <div className="flex items-center gap-2">
               <div className="relative flex-1 sm:flex-none">
                 <MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input placeholder="Search…" className="h-8 w-full pl-8 text-sm sm:w-56" />
+                <Input
+                  placeholder="Search guest or room…"
+                  value={reservationQuery}
+                  onChange={(e) => {
+                    setReservationQuery(e.target.value)
+                    setReservationsPage(0)
+                  }}
+                  className="h-8 w-full pl-8 text-sm sm:w-56"
+                />
               </div>
               <button
                 type="button"
+                onClick={() => setSortDescending((v) => !v)}
+                title="Sort by check-out date"
                 className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2 text-muted-foreground hover:bg-muted sm:px-3"
               >
-                <FunnelIcon size={16} />
-                <span className="hidden text-xs font-medium sm:inline">Filter</span>
-              </button>
-              <button
-                type="button"
-                className="flex h-8 items-center gap-1.5 rounded-lg border border-border px-2 text-muted-foreground hover:bg-muted sm:px-3"
-              >
-                <SortAscendingIcon size={16} />
+                {sortDescending ? <SortDescendingIcon size={16} /> : <SortAscendingIcon size={16} />}
                 <span className="hidden text-xs font-medium sm:inline">Sort</span>
-              </button>
-              <button
-                type="button"
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
-              >
-                <DotsThreeIcon size={16} />
               </button>
             </div>
           </div>
           {arrivalsToday.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">No arrivals booked for today yet.</p>
+          ) : pageReservations.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">No reservations match your search.</p>
           ) : (
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -160,8 +177,17 @@ export function ReceptionistDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {arrivalsToday.map((booking) => (
-                    <tr key={booking.id} className="border-b border-border last:border-0">
+                  {pageReservations.map((booking) => (
+                    <tr
+                      key={booking.id}
+                      role="link"
+                      tabIndex={0}
+                      onClick={() => router.push(`/admin/${dashboardToken}/arrivals/${booking.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") router.push(`/admin/${dashboardToken}/arrivals/${booking.id}`)
+                      }}
+                      className="cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-muted"
+                    >
                       <td className="py-3 pr-4 font-medium text-foreground">{booking.guestName}</td>
                       <td className="py-3 pr-4 text-muted-foreground">{booking.roomName}</td>
                       <td className="py-3 pr-4 text-muted-foreground">{formatDate(booking.checkIn)}</td>
@@ -170,6 +196,33 @@ export function ReceptionistDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {reservationsTotalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+              <span className="text-xs text-muted-foreground">
+                Page {reservationsCurrentPage + 1} of {reservationsTotalPages}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReservationsPage((p) => Math.max(0, p - 1))}
+                  disabled={reservationsCurrentPage === 0}
+                  className="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+                  aria-label="Previous page"
+                >
+                  <CaretLeftIcon size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReservationsPage((p) => Math.min(reservationsTotalPages - 1, p + 1))}
+                  disabled={reservationsCurrentPage >= reservationsTotalPages - 1}
+                  className="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+                  aria-label="Next page"
+                >
+                  <CaretRightIcon size={14} />
+                </button>
+              </div>
             </div>
           )}
           <Link

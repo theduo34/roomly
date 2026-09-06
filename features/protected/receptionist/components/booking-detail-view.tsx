@@ -35,6 +35,7 @@ import { useGuestFlags } from "@/features/protected/dashboard/hooks/use-guest-fl
 import { useStaffName } from "@/features/auth/hooks/use-role"
 import { appendAuditLog } from "@/lib/audit-log-store"
 import { updateBooking } from "@/lib/bookings-store"
+import { paymentMethodLabels } from "@/lib/payment-methods"
 import { cn, formatCurrency, formatDate } from "@/lib/utils"
 import type { Booking, BookingStatus } from "@/lib/types"
 
@@ -69,6 +70,7 @@ function DetailField({ icon: Icon, label, value }: { icon: IconComponent; label:
 }
 
 function VehiclePlateEditor({ booking }: { booking: Booking }) {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
   const staffName = useStaffName()
   const [open, setOpen] = useState(false)
   const [plate, setPlate] = useState(booking.vehiclePlate ?? "")
@@ -81,6 +83,7 @@ function VehiclePlateEditor({ booking }: { booking: Booking }) {
       action: `Recorded vehicle plate ${value} — ${booking.guestName}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: `/admin/${dashboardToken}/arrivals/${booking.id}`,
     })
     toast.success(`Vehicle plate saved for ${booking.guestName}.`)
     setOpen(false)
@@ -216,6 +219,7 @@ export function BookingDetailView() {
               <DetailField icon={ReceiptIcon} label="Deposit paid" value={formatCurrency(booking.depositPaid)} />
               <DetailField icon={WalletIcon} label="Balance due" value={formatCurrency(balance)} />
               <DetailField icon={CalendarCheckIcon} label="Booked on" value={formatDate(booking.bookedAt)} />
+              <DetailField icon={ReceiptIcon} label="Payment method" value={paymentMethodLabels[booking.paymentMethod]} />
             </div>
           </div>
 
@@ -226,6 +230,13 @@ export function BookingDetailView() {
             </span>
             <VehiclePlateEditor booking={booking} />
           </div>
+
+          {booking.specialRequests && (
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h2 className="font-heading text-base font-semibold text-foreground">Special requests</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{booking.specialRequests}</p>
+            </div>
+          )}
 
           <div className="rounded-xl border border-border bg-card p-5">
             <h2 className="font-heading text-base font-semibold text-foreground">Stay history</h2>
