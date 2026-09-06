@@ -38,6 +38,8 @@ export type BookingStatus = "confirmed" | "checked_in" | "checked_out" | "cancel
 
 export type PaymentMethod = "card" | "mobile_money" | "cash" | "bank_transfer"
 
+export type RefundStatus = "pending" | "approved" | "denied"
+
 export type Booking = {
   id: string
   guestName: string
@@ -58,6 +60,7 @@ export type Booking = {
   specialRequests?: string // e.g. extra bed, late checkout, preferences
   checkedInAt?: string // ISO datetime — actual moment the receptionist checked the guest in
   checkedOutAt?: string // ISO datetime — actual moment the receptionist checked the guest out
+  refundStatus?: RefundStatus // set once a cancelled booking's refund has been reviewed
 }
 
 export type StaffRole = "receptionist" | "manager" | "director"
@@ -95,4 +98,25 @@ export type StaffMember = {
   role: StaffRole
   status: StaffStatus
   joinedAt: string // ISO date string
+}
+
+export type MaintenanceStatus = "open" | "resolved"
+
+export type MaintenanceIssue = {
+  id: string
+  roomId: string
+  roomName: string
+  description: string
+  reportedBy: string
+  reportedAt: string // ISO date string
+  status: MaintenanceStatus
+  resolvedAt?: string // ISO date string
+}
+
+export type PromoCode = {
+  id: string
+  code: string
+  discountPercent: number
+  active: boolean
+  createdAt: string // ISO date string
 }

@@ -1,4 +1,13 @@
-import type { AuditLog, Booking, Review, Room, RoomImage, StaffMember } from "@/lib/types"
+import type {
+  AuditLog,
+  Booking,
+  MaintenanceIssue,
+  PromoCode,
+  Review,
+  Room,
+  RoomImage,
+  StaffMember,
+} from "@/lib/types"
 
 function isoDateOffset(days: number): string {
   const date = new Date()
@@ -387,6 +396,7 @@ export const bookings: Booking[] = [
     qrCode: "RML-7QXA",
     bookedAt: isoDateOffset(-8),
     paymentMethod: "bank_transfer",
+    refundStatus: "approved",
   },
   {
     id: "booking-9",
@@ -653,6 +663,34 @@ export const staff: StaffMember[] = [
     status: "on_shift",
     joinedAt: "2022-05-14",
   },
+]
+
+export const maintenanceIssues: MaintenanceIssue[] = [
+  {
+    id: "maintenance-1",
+    roomId: "room-6",
+    roomName: "Terrace Suite",
+    description: "Terrace door lock is sticking and needs a replacement latch.",
+    reportedBy: "Kojo A.",
+    reportedAt: isoDateOffset(-2),
+    status: "open",
+  },
+  {
+    id: "maintenance-2",
+    roomId: "room-1",
+    roomName: "Harbour Standard",
+    description: "Air conditioning was cycling loudly — technician replaced a worn fan belt.",
+    reportedBy: "Ama S.",
+    reportedAt: isoDateOffset(-9),
+    status: "resolved",
+    resolvedAt: isoDateOffset(-7),
+  },
+]
+
+export const promoCodes: PromoCode[] = [
+  { id: "promo-1", code: "WELCOME10", discountPercent: 10, active: true, createdAt: isoDateOffset(-40) },
+  { id: "promo-2", code: "LONGSTAY15", discountPercent: 15, active: true, createdAt: isoDateOffset(-25) },
+  { id: "promo-3", code: "OFFSEASON20", discountPercent: 20, active: false, createdAt: isoDateOffset(-60) },
 ]
 
 export const reviews: Review[] = [
