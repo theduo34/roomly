@@ -1,71 +1,81 @@
 "use client"
 
 import { useState } from "react"
-import { toast } from "sonner"
+import { useParams } from "next/navigation"
 import { ArrivalsList } from "@/features/protected/receptionist/components/arrivals-list"
-import { CheckoutDialog } from "@/features/protected/receptionist/components/checkout-dialog"
+import { ArrivalSearchDialog } from "@/features/protected/receptionist/components/arrival-search-dialog"
 import { WalkInBookingDialog } from "@/features/protected/receptionist/components/walk-in-booking-dialog"
 import { useLocalBookings } from "@/features/protected/dashboard/hooks/use-local-bookings"
-import { useStaffName } from "@/features/auth/hooks/use-role"
-import { appendAuditLog } from "@/lib/audit-log-store"
-import { updateBooking } from "@/lib/bookings-store"
-import { setRoomStatus } from "@/lib/room-status-store"
-import type { Booking } from "@/lib/types"
+import { cn } from "@/lib/utils"
+
+const dateFilters = ["Today", "This week", "This month"]
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function ArrivalsView() {
-  const bookings = useLocalBookings()
-  const staffName = useStaffName()
-  const today = todayIso()
-  const [checkoutTarget, setCheckoutTarget] = useState<Booking | null>(null)
+function addDays(iso: string, days: number): string {
+  const date = new Date(iso)
+  date.setDate(date.getDate() + days)
+  return date.toISOString().slice(0, 10)
+}
 
-  const todayArrivals = bookings.filter((b) => b.checkIn === today && b.status === "confirmed")
-  const upcoming = bookings
-    .filter((b) => b.checkIn > today && b.status === "confirmed")
+function endOfMonthIso(): string {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+}
+
+export function ArrivalsView() {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
+  const bookings = useLocalBookings()
+  const today = todayIso()
+  const [activeFilter, setActiveFilter] = useState(dateFilters[0])
+
+  const rangeEnd = activeFilter === "Today" ? today : activeFilter === "This week" ? addDays(today, 6) : endOfMonthIso()
+
+  const arrivals = bookings
+    .filter((b) => b.status === "confirmed" && b.checkIn >= today && b.checkIn <= rangeEnd)
     .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
   const inHouse = bookings.filter((b) => b.status === "checked_in")
 
-  function handleCheckIn(booking: Booking) {
-    updateBooking(booking.id, { status: "checked_in" })
-    setRoomStatus(booking.roomId, "occupied")
-    appendAuditLog({
-      action: `Checked in guest — ${booking.roomName}`,
-      performedBy: staffName || "Receptionist",
-      role: "receptionist",
-    })
-    toast.success(`${booking.guestName} checked in — ${booking.roomName} is now occupied.`)
-  }
-
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-end">
-        <WalkInBookingDialog />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1 rounded-full border border-border bg-card p-1">
+          {dateFilters.map((filter) => (
+            <button
+              key={filter}
+              type="button"
+              onClick={() => setActiveFilter(filter)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+                filter === activeFilter
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <ArrivalSearchDialog bookings={bookings} dashboardToken={dashboardToken} />
+          <WalkInBookingDialog />
+        </div>
       </div>
+
       <ArrivalsList
-        arrivals={todayArrivals}
-        title="Today's arrivals"
-        emptyMessage="No arrivals booked for today yet. Bookings made on the guest site will show up here."
-        actionLabel="Check in"
-        onAction={handleCheckIn}
-        showVehiclePlate
-      />
-      <ArrivalsList
-        arrivals={upcoming}
-        title="Upcoming arrivals"
-        emptyMessage="No upcoming confirmed bookings yet."
+        arrivals={arrivals}
+        title="Arrivals"
+        emptyMessage="No confirmed arrivals in this period yet. Bookings made on the guest site will show up here."
+        dashboardToken={dashboardToken}
       />
       <ArrivalsList
         arrivals={inHouse}
         title="Currently in-house"
         emptyMessage="No guests are checked in right now."
-        actionLabel="Check out"
-        onAction={setCheckoutTarget}
-        showVehiclePlate
+        dashboardToken={dashboardToken}
       />
-      <CheckoutDialog booking={checkoutTarget} onOpenChange={(open) => !open && setCheckoutTarget(null)} />
     </div>
   );
 }

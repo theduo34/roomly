@@ -1,7 +1,7 @@
 "use client"
 
 import { toast } from "sonner"
-import { ReceiptIcon } from "@phosphor-icons/react/ssr"
+import { DoorOpenIcon } from "@phosphor-icons/react/ssr"
 import {
   Dialog,
   DialogContent,
@@ -26,11 +26,10 @@ export function CheckoutDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const staffName = useStaffName()
-  const balance = booking ? Math.max(0, booking.totalAmount - booking.depositPaid) : 0
 
   function confirmCheckout() {
     if (!booking) return
-    updateBooking(booking.id, { status: "checked_out", depositPaid: booking.totalAmount })
+    updateBooking(booking.id, { status: "checked_out", checkedOutAt: new Date().toISOString() })
     setRoomStatus(booking.roomId, "needs_cleaning")
     appendAuditLog({
       action: `Checked out guest — ${booking.roomName}`,
@@ -46,21 +45,17 @@ export function CheckoutDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Check out {booking?.guestName}</DialogTitle>
-          <DialogDescription>{booking?.roomName} — settle any balance before releasing the room.</DialogDescription>
+          <DialogDescription>{booking?.roomName} — payment was already settled at check-in.</DialogDescription>
         </DialogHeader>
         {booking && (
-          <div className="flex flex-col gap-2 text-sm">
+          <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Total for stay</span>
               <span className="text-foreground">{formatCurrency(booking.totalAmount)}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Already paid</span>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-muted-foreground">Paid in full</span>
               <span className="text-foreground">{formatCurrency(booking.depositPaid)}</span>
-            </div>
-            <div className="flex items-center justify-between border-t border-border pt-2 font-medium">
-              <span className="text-foreground">Balance due now</span>
-              <span className="text-primary">{formatCurrency(balance)}</span>
             </div>
           </div>
         )}
@@ -69,8 +64,8 @@ export function CheckoutDialog({
             Cancel
           </Button>
           <Button onClick={confirmCheckout}>
-            <ReceiptIcon />
-            {balance > 0 ? "Settle balance & check out" : "Confirm check out"}
+            <DoorOpenIcon />
+            Confirm check out
           </Button>
         </DialogFooter>
       </DialogContent>

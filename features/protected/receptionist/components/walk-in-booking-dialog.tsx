@@ -29,6 +29,7 @@ import { useRooms } from "@/features/protected/rooms/hooks/use-rooms"
 import { useStaffName } from "@/features/auth/hooks/use-role"
 import { appendAuditLog } from "@/lib/audit-log-store"
 import { appendBooking } from "@/lib/bookings-store"
+import { paymentMethodOptions } from "@/lib/payment-methods"
 import { setRoomStatus } from "@/lib/room-status-store"
 import { calculateNights, formatCurrency, generateBookingReference } from "@/lib/utils"
 import type { Booking } from "@/lib/types"
@@ -40,6 +41,7 @@ const walkInSchema = z
     guestPhone: z.string().min(7, "Enter a valid phone number"),
     roomId: z.string().min(1, "Assign a room"),
     checkOut: z.string().min(1, "Select a check-out date"),
+    paymentMethod: z.enum(["card", "mobile_money", "cash", "bank_transfer"]),
     vehiclePlate: z.string().optional(),
   })
 
@@ -65,7 +67,15 @@ export function WalkInBookingDialog() {
     formState: { errors, isSubmitting },
   } = useForm<WalkInValues>({
     resolver: zodResolver(walkInSchema),
-    defaultValues: { guestName: "", guestEmail: "", guestPhone: "", roomId: "", checkOut: "", vehiclePlate: "" },
+    defaultValues: {
+      guestName: "",
+      guestEmail: "",
+      guestPhone: "",
+      roomId: "",
+      checkOut: "",
+      paymentMethod: "card",
+      vehiclePlate: "",
+    },
   })
 
   const roomId = watch("roomId")
@@ -96,6 +106,8 @@ export function WalkInBookingDialog() {
       status: "checked_in",
       qrCode: generateBookingReference(),
       bookedAt: new Date().toISOString(),
+      paymentMethod: values.paymentMethod,
+      checkedInAt: new Date().toISOString(),
       ...(values.vehiclePlate ? { vehiclePlate: values.vehiclePlate.trim().toUpperCase() } : {}),
     }
 
@@ -116,7 +128,7 @@ export function WalkInBookingDialog() {
       <DialogTrigger asChild>
         <Button>
           <PlusIcon />
-          New walk-in booking
+          <span className="hidden sm:inline">New walk-in booking</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -182,9 +194,32 @@ export function WalkInBookingDialog() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="wi-plate">Vehicle plate (optional)</Label>
-            <Input id="wi-plate" placeholder="GT 1234-24" {...register("vehiclePlate")} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="wi-payment">Payment method</Label>
+              <Controller
+                name="paymentMethod"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="wi-payment" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethodOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="wi-plate">Vehicle plate (optional)</Label>
+              <Input id="wi-plate" placeholder="GT 1234-24" {...register("vehiclePlate")} />
+            </div>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm">

@@ -1,129 +1,181 @@
 "use client"
 
 import { useState } from "react"
-import { toast } from "sonner"
-import { CarIcon, PencilSimpleIcon } from "@phosphor-icons/react/ssr"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { useStaffName } from "@/features/auth/hooks/use-role"
-import { appendAuditLog } from "@/lib/audit-log-store"
-import { updateBooking } from "@/lib/bookings-store"
-import { formatDate } from "@/lib/utils"
-import type { Booking } from "@/lib/types"
+import { useRouter } from "next/navigation"
+import { CaretLeftIcon, CaretRightIcon, CarIcon } from "@phosphor-icons/react/ssr"
+import { cn, formatDate } from "@/lib/utils"
+import type { Booking, BookingStatus } from "@/lib/types"
 
-function VehiclePlateField({ booking }: { booking: Booking }) {
-  const staffName = useStaffName()
-  const [open, setOpen] = useState(false)
-  const [plate, setPlate] = useState(booking.vehiclePlate ?? "")
+const PAGE_SIZE = 5
 
-  function save() {
-    const value = plate.trim().toUpperCase()
-    if (!value) return
-    updateBooking(booking.id, { vehiclePlate: value })
-    appendAuditLog({
-      action: `Recorded vehicle plate ${value} — ${booking.guestName}`,
-      performedBy: staffName || "Receptionist",
-      role: "receptionist",
-    })
-    toast.success(`Vehicle plate saved for ${booking.guestName}.`)
-    setOpen(false)
-  }
+const statusStyles: Record<BookingStatus, string> = {
+  confirmed: "bg-primary/10 text-primary",
+  checked_in: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+  checked_out: "bg-muted text-muted-foreground",
+  cancelled: "bg-destructive/10 text-destructive",
+}
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <CarIcon size={14} />
-        {booking.vehiclePlate ?? "Add vehicle plate"}
-        <PencilSimpleIcon size={12} />
-      </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Vehicle plate</DialogTitle>
-            <DialogDescription>
-              Recorded at the gate for {booking.guestName} — correct it here if needed.
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={plate}
-            onChange={(e) => setPlate(e.target.value)}
-            placeholder="GT 1234-24"
-            autoFocus
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={save}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+const statusLabels: Record<BookingStatus, string> = {
+  confirmed: "Confirmed",
+  checked_in: "Checked in",
+  checked_out: "Checked out",
+  cancelled: "Cancelled",
 }
 
 export function ArrivalsList({
   arrivals,
   title,
   emptyMessage,
-  actionLabel,
-  onAction,
-  showVehiclePlate = false,
+  dashboardToken,
 }: {
   arrivals: Booking[]
   title: string
   emptyMessage: string
-  actionLabel?: string
-  onAction?: (booking: Booking) => void
-  showVehiclePlate?: boolean
+  dashboardToken: string
 }) {
+  const router = useRouter()
+  const [page, setPage] = useState(0)
+
+  const totalPages = Math.max(1, Math.ceil(arrivals.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages - 1)
+  const pageItems = arrivals.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE)
+
+  function goToBooking(bookingId: string) {
+    router.push(`/admin/${dashboardToken}/arrivals/${bookingId}`)
+  }
+
   return (
     <div className="rounded-xl border border-border bg-card p-5">
-      <h2 className="font-heading text-base font-semibold text-foreground">{title}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-heading text-base font-semibold text-foreground">{title}</h2>
+        <span className="text-xs text-muted-foreground">{arrivals.length}</span>
+      </div>
       {arrivals.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{emptyMessage}</p>
       ) : (
-        <ul className="mt-4 flex flex-col gap-3">
-          {arrivals.map((booking) => (
-            <li
-              key={booking.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border p-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{booking.guestName}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {booking.roomName} · {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
-                </p>
-                {showVehiclePlate && (
-                  <div className="mt-1">
-                    <VehiclePlateField booking={booking} />
-                  </div>
-                )}
-              </div>
-              {onAction && actionLabel && (
+        <>
+          {/* Cards on mobile — a 6-column table doesn't fit a narrow screen without cramped horizontal scrolling */}
+          <ul className="mt-4 flex flex-col gap-2 sm:hidden">
+            {pageItems.map((booking) => (
+              <li key={booking.id}>
                 <button
                   type="button"
-                  onClick={() => onAction(booking)}
-                  className="shrink-0 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/80"
+                  onClick={() => goToBooking(booking.id)}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted"
                 >
-                  {actionLabel}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium text-foreground">{booking.guestName}</p>
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
+                          statusStyles[booking.status]
+                        )}
+                      >
+                        {statusLabels[booking.status]}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">{booking.roomName}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
+                    </p>
+                    {booking.vehiclePlate && (
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <CarIcon size={12} />
+                        {booking.vehiclePlate}
+                      </p>
+                    )}
+                  </div>
+                  <CaretRightIcon size={16} className="shrink-0 text-muted-foreground" />
                 </button>
-              )}
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+
+          {/* Table from sm: up */}
+          <div className="mt-4 hidden overflow-x-auto sm:block">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border text-xs text-muted-foreground uppercase">
+                  <th className="pb-2 font-medium">Guest</th>
+                  <th className="pb-2 font-medium">Room</th>
+                  <th className="pb-2 font-medium">Check-in</th>
+                  <th className="pb-2 font-medium">Check-out</th>
+                  <th className="pb-2 font-medium">Status</th>
+                  <th className="pb-2 font-medium" aria-hidden="true" />
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((booking) => (
+                  <tr
+                    key={booking.id}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => goToBooking(booking.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") goToBooking(booking.id)
+                    }}
+                    className="cursor-pointer border-b border-border transition-colors last:border-0 hover:bg-muted"
+                  >
+                    <td className="py-3 pr-4">
+                      <p className="font-medium text-foreground">{booking.guestName}</p>
+                      {booking.vehiclePlate && (
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <CarIcon size={12} />
+                          {booking.vehiclePlate}
+                        </p>
+                      )}
+                    </td>
+                    <td className="py-3 pr-4 text-muted-foreground">{booking.roomName}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{formatDate(booking.checkIn)}</td>
+                    <td className="py-3 pr-4 text-muted-foreground">{formatDate(booking.checkOut)}</td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
+                          statusStyles[booking.status]
+                        )}
+                      >
+                        {statusLabels[booking.status]}
+                      </span>
+                    </td>
+                    <td className="py-3 pl-2 text-right">
+                      <CaretRightIcon size={16} className="inline-block text-muted-foreground" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
+              <span className="text-xs text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                  className="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+                  aria-label="Previous page"
+                >
+                  <CaretLeftIcon size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage >= totalPages - 1}
+                  className="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
+                  aria-label="Next page"
+                >
+                  <CaretRightIcon size={14} />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
