@@ -1,8 +1,9 @@
+import { roomStatusConfig } from "@/components/shared/status-badge"
 import type { Booking, BookingStatus } from "@/lib/types"
 
 const statusOrder: { status: BookingStatus; label: string; barColor: string }[] = [
   { status: "confirmed", label: "Confirmed", barColor: "var(--primary)" },
-  { status: "checked_in", label: "Checked in", barColor: "#16a34a" },
+  { status: "checked_in", label: "Checked in", barColor: roomStatusConfig.available.dotColor },
   { status: "checked_out", label: "Checked out", barColor: "var(--muted-foreground)" },
   { status: "cancelled", label: "Cancelled", barColor: "var(--destructive)" },
 ]
