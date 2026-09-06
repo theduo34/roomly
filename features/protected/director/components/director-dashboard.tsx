@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import { ArrowRightIcon } from "@phosphor-icons/react/ssr"
 import { ManagerDashboard } from "@/features/protected/manager/components/manager-dashboard"
 import { AuditLogTable } from "@/features/protected/director/components/audit-log-table"
+import { ExportReportButton } from "@/features/protected/director/components/export-report-button"
 import { useAuditLog } from "@/features/protected/dashboard/hooks/use-audit-log"
 
 export function DirectorDashboard() {
@@ -16,6 +17,9 @@ export function DirectorDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex justify-end">
+        <ExportReportButton />
+      </div>
       <ManagerDashboard />
       <div className="flex flex-col gap-3">
         <AuditLogTable entries={recentActivity} title="Recent activity" />
