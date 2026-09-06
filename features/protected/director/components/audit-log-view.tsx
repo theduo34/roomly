@@ -1,6 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { MagnifyingGlassIcon } from "@phosphor-icons/react/ssr"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
@@ -21,29 +23,43 @@ const roleFilters: { value: StaffRole | "all"; label: string }[] = [
 
 export function AuditLogView() {
   const [role, setRole] = useState<StaffRole | "all">("all")
+  const [query, setQuery] = useState("")
   const auditLog = useAuditLog()
 
-  const entries = useMemo(
-    () => (role === "all" ? auditLog : auditLog.filter((entry) => entry.role === role)),
-    [role, auditLog]
-  )
+  const entries = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return auditLog
+      .filter((entry) => role === "all" || entry.role === role)
+      .filter((entry) => !q || `${entry.action} ${entry.performedBy}`.toLowerCase().includes(q))
+  }, [role, query, auditLog])
 
   return (
     <div className="flex flex-col gap-4">
-      <Select value={role} onValueChange={(value) => setRole(value as StaffRole | "all")}>
-        <SelectTrigger className="w-48">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {roleFilters.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative max-w-sm flex-1">
+          <MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search by action or staff name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={role} onValueChange={(value) => setRole(value as StaffRole | "all")}>
+          <SelectTrigger className="w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {roleFilters.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-      <AuditLogTable entries={entries} />
+      <AuditLogTable entries={entries} paginate />
     </div>
   );
 }
