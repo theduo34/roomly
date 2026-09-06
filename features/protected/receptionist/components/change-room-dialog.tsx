@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import { ArrowsLeftRightIcon } from "@phosphor-icons/react/ssr"
 import {
@@ -28,6 +29,7 @@ export function ChangeRoomDialog({
   booking: Booking | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
   const rooms = useRooms()
   const staffName = useStaffName()
   const [roomId, setRoomId] = useState("")
@@ -46,6 +48,7 @@ export function ChangeRoomDialog({
       action: `Moved guest — ${booking.roomName} → ${newRoom.name}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: `/admin/${dashboardToken}/arrivals/${booking.id}`,
     })
     toast.success(`${booking.guestName} moved to ${newRoom.name}.`)
     setRoomId("")

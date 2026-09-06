@@ -1,5 +1,6 @@
 "use client"
 
+import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import { DoorOpenIcon } from "@phosphor-icons/react/ssr"
 import {
@@ -25,6 +26,7 @@ export function CheckoutDialog({
   booking: Booking | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
   const staffName = useStaffName()
 
   function confirmCheckout() {
@@ -35,6 +37,7 @@ export function CheckoutDialog({
       action: `Checked out guest — ${booking.roomName}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: `/admin/${dashboardToken}/arrivals/${booking.id}`,
     })
     toast.success(`${booking.guestName} checked out — ${booking.roomName} needs cleaning.`)
     onOpenChange(false)

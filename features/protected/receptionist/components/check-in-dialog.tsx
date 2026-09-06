@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import { KeyIcon } from "@phosphor-icons/react/ssr"
 import {
@@ -27,6 +28,7 @@ export function CheckInDialog({
   booking: Booking | null
   onOpenChange: (open: boolean) => void
 }) {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
   const staffName = useStaffName()
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
   const balance = booking ? Math.max(0, booking.totalAmount - booking.depositPaid) : 0
@@ -49,6 +51,7 @@ export function CheckInDialog({
       action: `Checked in guest — ${booking.roomName}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: `/admin/${dashboardToken}/arrivals/${booking.id}`,
     })
     toast.success(`${booking.guestName} checked in — ${booking.roomName} is now occupied.`)
     handleOpenChange(false)

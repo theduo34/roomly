@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import { FlagIcon } from "@phosphor-icons/react/ssr"
 import { Button } from "@/components/ui/button"
@@ -19,11 +20,13 @@ import { appendAuditLog } from "@/lib/audit-log-store"
 import { flagGuest, unflagGuest } from "@/lib/guest-flags-store"
 
 export function FlagGuestButton({ email, name }: { email: string; name: string }) {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
   const flags = useGuestFlags()
   const flag = flags.get(email)
   const staffName = useStaffName()
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState("")
+  const guestLink = `/admin/${dashboardToken}/guests/${encodeURIComponent(email)}`
 
   function submitFlag() {
     const value = reason.trim()
@@ -33,6 +36,7 @@ export function FlagGuestButton({ email, name }: { email: string; name: string }
       action: `Flagged guest profile — ${name}: ${value}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: guestLink,
     })
     toast.success(`${name}'s profile has been flagged.`)
     setReason("")
@@ -45,6 +49,7 @@ export function FlagGuestButton({ email, name }: { email: string; name: string }
       action: `Removed flag from guest profile — ${name}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: guestLink,
     })
     toast.message(`Flag removed for ${name}.`)
   }

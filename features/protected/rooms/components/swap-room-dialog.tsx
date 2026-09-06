@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -27,6 +28,7 @@ export function SwapRoomDialog({
   rooms: Room[]
   onOpenChange: (open: boolean) => void
 }) {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
   const staffName = useStaffName()
   const [targetRoomId, setTargetRoomId] = useState("")
   const availableRooms = useMemo(() => rooms.filter((r) => r.status === "available"), [rooms])
@@ -44,6 +46,7 @@ export function SwapRoomDialog({
       action: `Swapped guest room — ${fromRoom.name} to ${toRoom.name}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: `/admin/${dashboardToken}/arrivals/${booking.id}`,
     })
     toast.success(`${booking.guestName} moved to ${toRoom.name}.`)
     setTargetRoomId("")

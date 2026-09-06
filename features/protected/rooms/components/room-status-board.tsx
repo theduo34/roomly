@@ -124,6 +124,7 @@ export function RoomStatusBoard() {
       action: `Marked ${roomName} as ${label}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: `/admin/${dashboardToken}/rooms/${roomId}`,
     })
     toast.success(`${roomName} marked as ${label}.`)
   }

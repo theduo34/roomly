@@ -55,6 +55,7 @@ export type Booking = {
   bookedAt: string // ISO date string
   paymentMethod: PaymentMethod
   vehiclePlate?: string
+  specialRequests?: string // e.g. extra bed, late checkout, preferences
   checkedInAt?: string // ISO datetime — actual moment the receptionist checked the guest in
   checkedOutAt?: string // ISO datetime — actual moment the receptionist checked the guest out
 }
@@ -67,6 +68,14 @@ export type AuditLog = {
   performedBy: string
   role: StaffRole
   timestamp: string
+}
+
+export type Notification = {
+  id: string
+  message: string
+  link?: string // in-app path to navigate to when clicked
+  read: boolean
+  createdAt: string // ISO datetime
 }
 
 export type GuestFlag = {

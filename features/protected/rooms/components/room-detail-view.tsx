@@ -80,6 +80,7 @@ export function RoomDetailView() {
       action: `Marked ${room.name} as ${label}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: `/admin/${dashboardToken}/rooms/${room.id}`,
     })
     toast.success(`${room.name} marked as ${label}.`)
   }

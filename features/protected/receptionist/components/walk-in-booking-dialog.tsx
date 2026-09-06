@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import { Controller, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -52,6 +53,7 @@ function todayIso() {
 }
 
 export function WalkInBookingDialog() {
+  const { dashboardToken } = useParams<{ dashboardToken: string }>()
   const [open, setOpen] = useState(false)
   const rooms = useRooms()
   const staffName = useStaffName()
@@ -117,6 +119,7 @@ export function WalkInBookingDialog() {
       action: `Processed walk-in booking — ${selectedRoom.name}`,
       performedBy: staffName || "Receptionist",
       role: "receptionist",
+      link: `/admin/${dashboardToken}/arrivals/${booking.id}`,
     })
     toast.success(`${values.guestName} checked in — ${selectedRoom.name} is now occupied.`)
     reset()
