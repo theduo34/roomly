@@ -76,7 +76,7 @@ export function AccountMenu({
             type="button"
             className={cn(
               "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left hover:bg-muted",
-              collapsed && "justify-center px-0"
+              collapsed && "md:justify-center md:px-0"
             )}
           >
             <Avatar size="sm">
@@ -84,19 +84,11 @@ export function AccountMenu({
                 {initialsOf(displayName)}
               </AvatarFallback>
             </Avatar>
-            {!collapsed && (
-              <>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-foreground">
-                    {displayName}
-                  </span>
-                  <span className="block truncate text-xs text-muted-foreground">
-                    {roleLabels[role]}
-                  </span>
-                </span>
-                <CaretUpDownIcon size={16} className="shrink-0 text-muted-foreground" />
-              </>
-            )}
+            <span className={cn("min-w-0 flex-1", collapsed && "md:hidden")}>
+              <span className="block truncate text-sm font-semibold text-foreground">{displayName}</span>
+              <span className="block truncate text-xs text-muted-foreground">{roleLabels[role]}</span>
+            </span>
+            <CaretUpDownIcon size={16} className={cn("shrink-0 text-muted-foreground", collapsed && "md:hidden")} />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" side="top" className="w-56">
