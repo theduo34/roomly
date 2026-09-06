@@ -15,7 +15,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -79,8 +78,8 @@ export function AccountMenu({
               collapsed && "md:justify-center md:px-0"
             )}
           >
-            <Avatar size="sm">
-              <AvatarFallback className="bg-primary/10 font-sans text-xs font-semibold text-primary">
+            <Avatar size="lg">
+              <AvatarFallback className="bg-primary/10 font-sans text-sm font-semibold text-primary">
                 {initialsOf(displayName)}
               </AvatarFallback>
             </Avatar>
@@ -92,8 +91,6 @@ export function AccountMenu({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" side="top" className="w-56">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => toast.message("Account settings are coming soon.")}>
             <UserCircleIcon size={16} />
             My Account

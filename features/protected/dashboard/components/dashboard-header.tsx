@@ -11,6 +11,7 @@ const sectionTitles: Record<string, string> = {
   rooms: "Rooms",
   guests: "Guests",
   bookings: "Bookings",
+  "vehicle-log": "Vehicle log",
   staff: "Staff",
   policies: "Policies",
   audit: "Audit trail",
@@ -22,12 +23,11 @@ function useSectionTitle() {
   return sectionTitles[section ?? "dashboard"] ?? "Dashboard"
 }
 
-/** Pages one level deeper than a sidebar section (e.g. a booking's own detail page) aren't reachable from the sidebar, so the header falls back to a button that goes up one level instead of the sidebar toggle. */
-function useBackHref(): string | null {
+/** Pages one level deeper than a sidebar section (e.g. a booking's own detail page) aren't reachable from the sidebar, so the header falls back to a back button instead of the sidebar toggle. */
+function useShowBack(): boolean {
   const pathname = usePathname()
   const segments = pathname.split("/").filter(Boolean)
-  if (segments.length <= 3) return null
-  return `/${segments.slice(0, -1).join("/")}`
+  return segments.length > 3
 }
 
 export function DashboardHeader({
@@ -38,16 +38,16 @@ export function DashboardHeader({
   onToggleCollapsed: () => void
 }) {
   const title = useSectionTitle()
-  const backHref = useBackHref()
+  const showBack = useShowBack()
   const router = useRouter()
 
   return (
     <header className="flex shrink-0 items-center justify-between border-b border-border bg-background px-6 py-4">
       <div className="flex items-center gap-3">
-        {backHref ? (
+        {showBack ? (
           <button
             type="button"
-            onClick={() => router.push(backHref)}
+            onClick={() => router.back()}
             aria-label="Go back"
             className="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
           >
