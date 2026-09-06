@@ -17,6 +17,16 @@ export type Room = {
   amenities: string[]
   capacity: number
   status: RoomStatus
+  rating: number // out of 5
+}
+
+export type Review = {
+  id: string
+  roomId: string
+  guestName: string
+  rating: number // out of 5
+  comment: string
+  date: string // ISO date string
 }
 
 export type BookingStatus = "confirmed" | "checked_in" | "checked_out" | "cancelled"
@@ -25,6 +35,7 @@ export type Booking = {
   id: string
   guestName: string
   guestEmail: string
+  guestPhone: string
   roomId: string
   roomName: string
   checkIn: string // ISO date string
@@ -46,4 +57,23 @@ export type AuditLog = {
   performedBy: string
   role: StaffRole
   timestamp: string
+}
+
+export type GuestFlag = {
+  guestEmail: string
+  reason: string
+  flaggedBy: string
+  flaggedAt: string // ISO date string
+}
+
+export type StaffStatus = "on_shift" | "off_shift"
+
+export type StaffMember = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: StaffRole
+  status: StaffStatus
+  joinedAt: string // ISO date string
 }
