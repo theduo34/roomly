@@ -2,12 +2,27 @@
 
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
-import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassIcon, UserPlusIcon } from "@phosphor-icons/react/ssr"
-import { Button } from "@/components/ui/button"
+import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassIcon, TrashIcon } from "@phosphor-icons/react/ssr"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
-import { staff } from "@/lib/mock-data"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { InviteStaffDialog } from "@/features/protected/staff/components/invite-staff-dialog"
+import { useStaff } from "@/features/protected/dashboard/hooks/use-staff"
+import { useStaffName } from "@/features/auth/hooks/use-role"
+import { useDashboardRole } from "@/features/protected/dashboard/context/role-context"
+import { appendAuditLog } from "@/lib/audit-log-store"
+import { removeStaffMember, updateStaffRole } from "@/lib/staff-store"
 import { cn } from "@/lib/utils"
-import type { StaffRole, StaffStatus } from "@/lib/types"
+import type { StaffMember, StaffRole, StaffStatus } from "@/lib/types"
 
 const PAGE_SIZE = 8
 
@@ -44,31 +59,50 @@ function formatJoinDate(value: string) {
 }
 
 export function StaffDirectory() {
+  const staff = useStaff()
+  const staffName = useStaffName()
+  const role = useDashboardRole()
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(0)
+  const [removeTarget, setRemoveTarget] = useState<StaffMember | null>(null)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return staff.filter((member) => !q || `${member.name} ${member.email}`.toLowerCase().includes(q))
-  }, [query])
+  }, [staff, query])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages - 1)
   const pageStaff = filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE)
 
+  function handleRoleChange(member: StaffMember, nextRole: StaffRole) {
+    if (nextRole === member.role) return
+    updateStaffRole(member.id, nextRole)
+    appendAuditLog({
+      action: `Changed ${member.name}'s role to ${roleLabels[nextRole]}`,
+      performedBy: staffName || roleLabels[role],
+      role,
+    })
+    toast.success(`${member.name} is now a ${roleLabels[nextRole].toLowerCase()}.`)
+  }
+
+  function confirmRemove() {
+    if (!removeTarget) return
+    removeStaffMember(removeTarget.id)
+    appendAuditLog({
+      action: `Removed staff access — ${removeTarget.name}`,
+      performedBy: staffName || roleLabels[role],
+      role,
+    })
+    toast.message(`${removeTarget.name}'s access has been removed.`)
+    setRemoveTarget(null)
+  }
+
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-heading text-base font-semibold text-foreground">Staff directory</h2>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => toast.message("Inviting new staff isn't available in this demo.")}
-        >
-          <UserPlusIcon className="size-4" />
-          Invite staff
-        </Button>
+        <InviteStaffDialog />
       </div>
 
       <div className="relative mt-4 max-w-sm">
@@ -89,7 +123,7 @@ export function StaffDirectory() {
       ) : (
         <ul className="mt-4 flex flex-col divide-y divide-border">
           {pageStaff.map((member) => (
-            <li key={member.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+            <li key={member.id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 font-heading text-sm font-semibold text-primary">
                   {initialsOf(member.name)}
@@ -101,12 +135,9 @@ export function StaffDirectory() {
                   </p>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
                 <span className="hidden text-xs text-muted-foreground sm:inline">
                   Joined {formatJoinDate(member.joinedAt)}
-                </span>
-                <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                  {roleLabels[member.role]}
                 </span>
                 <span
                   className={cn(
@@ -116,6 +147,26 @@ export function StaffDirectory() {
                 >
                   {statusLabels[member.status]}
                 </span>
+                <Select value={member.role} onValueChange={(value) => handleRoleChange(member, value as StaffRole)}>
+                  <SelectTrigger className="h-8 w-36 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(roleLabels) as StaffRole[]).map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {roleLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <button
+                  type="button"
+                  onClick={() => setRemoveTarget(member)}
+                  aria-label={`Remove ${member.name}`}
+                  className="flex size-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <TrashIcon size={14} />
+                </button>
               </div>
             </li>
           ))}
@@ -149,6 +200,21 @@ export function StaffDirectory() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={!!removeTarget} onOpenChange={(open) => !open && setRemoveTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {removeTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will immediately lose access to the staff console. This can&apos;t be undone in this demo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove}>Remove access</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
