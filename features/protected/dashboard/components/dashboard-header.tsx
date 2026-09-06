@@ -13,6 +13,9 @@ const sectionTitles: Record<string, string> = {
   bookings: "Bookings",
   "vehicle-log": "Vehicle log",
   staff: "Staff",
+  maintenance: "Maintenance",
+  refunds: "Refunds & promos",
+  analytics: "Analytics",
   policies: "Policies",
   audit: "Audit trail",
 }
