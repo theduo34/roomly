@@ -7,13 +7,18 @@ export type RoomStatus =
 
 export type RoomType = "standard" | "deluxe" | "suite" | "executive"
 
+export type RoomImage = {
+  url: string // Unsplash URL
+  category: string // e.g. "Bedroom", "Bathroom", "Lounge", "View"
+}
+
 export type Room = {
   id: string
   name: string
   type: RoomType
   description: string
   price: number // per night in GHS
-  images: string[] // Unsplash URLs
+  images: RoomImage[]
   amenities: string[]
   capacity: number
   status: RoomStatus
@@ -31,6 +36,8 @@ export type Review = {
 
 export type BookingStatus = "confirmed" | "checked_in" | "checked_out" | "cancelled"
 
+export type PaymentMethod = "card" | "mobile_money" | "cash" | "bank_transfer"
+
 export type Booking = {
   id: string
   guestName: string
@@ -38,15 +45,18 @@ export type Booking = {
   guestPhone: string
   roomId: string
   roomName: string
-  checkIn: string // ISO date string
-  checkOut: string // ISO date string
+  checkIn: string // ISO date string — planned check-in date
+  checkOut: string // ISO date string — planned check-out date
   nights: number
   totalAmount: number
   depositPaid: number // 20% of total
   status: BookingStatus
   qrCode: string // unique string used as mock QR data
   bookedAt: string // ISO date string
+  paymentMethod: PaymentMethod
   vehiclePlate?: string
+  checkedInAt?: string // ISO datetime — actual moment the receptionist checked the guest in
+  checkedOutAt?: string // ISO datetime — actual moment the receptionist checked the guest out
 }
 
 export type StaffRole = "receptionist" | "manager" | "director"

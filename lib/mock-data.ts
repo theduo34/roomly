@@ -1,9 +1,81 @@
-import type { AuditLog, Booking, Review, Room, StaffMember } from "@/lib/types"
+import type { AuditLog, Booking, Review, Room, RoomImage, StaffMember } from "@/lib/types"
 
 function isoDateOffset(days: number): string {
   const date = new Date()
   date.setDate(date.getDate() + days)
   return date.toISOString().slice(0, 10)
+}
+
+function isoDateTimeOffset(days: number, hours: number, minutes: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+  date.setHours(hours, minutes, 0, 0)
+  return date.toISOString()
+}
+
+// Each room's own two photos, in room order — reused across categories below so every
+// room ends up with a small categorized gallery without needing brand-new image URLs.
+const roomPhotoPairs: [string, string][] = [
+  [
+    "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1611048268330-53de574cae3b?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1595576508898-0ad5c879a061?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1631049035182-249067d7618e?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1618219944342-824e40a13285?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1592229505726-ca121723b8ef?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1615873968403-89e068629265?auto=format&fit=crop&w=1200&q=80",
+  ],
+]
+
+function roomImages(index: number): RoomImage[] {
+  const [bedroom, view] = roomPhotoPairs[index]
+  const [, bathroom] = roomPhotoPairs[(index + 3) % roomPhotoPairs.length]
+  const [lounge] = roomPhotoPairs[(index + 6) % roomPhotoPairs.length]
+  return [
+    { url: bedroom, category: "Bedroom" },
+    { url: bathroom, category: "Bathroom" },
+    { url: lounge, category: "Lounge" },
+    { url: view, category: "View" },
+  ]
 }
 
 export const rooms: Room[] = [
@@ -14,10 +86,7 @@ export const rooms: Room[] = [
     description:
       "A bright, comfortable room with a queen bed and city views — ideal for short stays and solo travellers.",
     price: 480,
-    images: [
-      "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(0),
     amenities: ["Free Wi-Fi", "Air conditioning", "Flat-screen TV", "En-suite bathroom"],
     capacity: 2,
     status: "available",
@@ -30,10 +99,7 @@ export const rooms: Room[] = [
     description:
       "A spacious deluxe room overlooking the courtyard garden, with a king bed and a private sitting area.",
     price: 780,
-    images: [
-      "https://images.unsplash.com/photo-1611048268330-53de574cae3b?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(1),
     amenities: ["Free Wi-Fi", "Air conditioning", "Mini bar", "Garden view", "Work desk"],
     capacity: 2,
     status: "reserved",
@@ -46,10 +112,7 @@ export const rooms: Room[] = [
     description:
       "A generous suite with a separate lounge, king bed, and floor-to-ceiling windows looking over the city skyline.",
     price: 1450,
-    images: [
-      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(2),
     amenities: ["Free Wi-Fi", "Air conditioning", "Mini bar", "Lounge area", "Bathtub", "City view"],
     capacity: 3,
     status: "occupied",
@@ -62,10 +125,7 @@ export const rooms: Room[] = [
     description:
       "Top-floor executive room built for business travel — a king bed, dedicated workspace, and lounge access.",
     price: 2100,
-    images: [
-      "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(3),
     amenities: ["Free Wi-Fi", "Air conditioning", "Executive lounge access", "Work desk", "Mini bar", "Bathtub"],
     capacity: 2,
     status: "available",
@@ -78,10 +138,7 @@ export const rooms: Room[] = [
     description:
       "A cosy twin room facing the inner courtyard, freshly serviced and ready for a quick turnaround stay.",
     price: 460,
-    images: [
-      "https://images.unsplash.com/photo-1595576508898-0ad5c879a061?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(4),
     amenities: ["Free Wi-Fi", "Air conditioning", "Flat-screen TV"],
     capacity: 2,
     status: "needs_cleaning",
@@ -94,10 +151,7 @@ export const rooms: Room[] = [
     description:
       "A suite with a private terrace and outdoor seating, undergoing scheduled maintenance this week.",
     price: 1600,
-    images: [
-      "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(5),
     amenities: ["Free Wi-Fi", "Air conditioning", "Private terrace", "Mini bar", "Lounge area"],
     capacity: 3,
     status: "maintenance",
@@ -110,10 +164,7 @@ export const rooms: Room[] = [
     description:
       "A well-lit studio with a queen bed and a fold-out desk, tucked on a quiet upper floor.",
     price: 510,
-    images: [
-      "https://images.unsplash.com/photo-1631049035182-249067d7618e?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(6),
     amenities: ["Free Wi-Fi", "Air conditioning", "Flat-screen TV", "Work desk"],
     capacity: 2,
     status: "available",
@@ -126,10 +177,7 @@ export const rooms: Room[] = [
     description:
       "A deluxe room with warm wood tones, a king bed, and a reading nook by the window.",
     price: 810,
-    images: [
-      "https://images.unsplash.com/photo-1591088398332-8a7791972843?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1618219944342-824e40a13285?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(7),
     amenities: ["Free Wi-Fi", "Air conditioning", "Mini bar", "Work desk", "Reading nook"],
     capacity: 2,
     status: "reserved",
@@ -142,9 +190,12 @@ export const rooms: Room[] = [
     description:
       "A calm suite with a separate lounge and wide windows framing the lake, ideal for longer stays.",
     price: 1550,
+    // A few extra Bedroom shots so this room demonstrates the multi-photo grid layout
     images: [
-      "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1620626011761-996317b8d101?auto=format&fit=crop&w=1200&q=80",
+      ...roomImages(8),
+      { url: roomPhotoPairs[0][0], category: "Bedroom" },
+      { url: roomPhotoPairs[4][0], category: "Bedroom" },
+      { url: roomPhotoPairs[10][0], category: "Bedroom" },
     ],
     amenities: ["Free Wi-Fi", "Air conditioning", "Mini bar", "Lounge area", "Lake view", "Bathtub"],
     capacity: 3,
@@ -158,10 +209,7 @@ export const rooms: Room[] = [
     description:
       "An executive room built for extended business trips, with a private workspace and lounge access.",
     price: 2250,
-    images: [
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(9),
     amenities: ["Free Wi-Fi", "Air conditioning", "Executive lounge access", "Work desk", "Mini bar"],
     capacity: 2,
     status: "occupied",
@@ -174,10 +222,7 @@ export const rooms: Room[] = [
     description:
       "A simple, comfortable room with a queen bed and a view over the palm-lined courtyard.",
     price: 495,
-    images: [
-      "https://images.unsplash.com/photo-1592229505726-ca121723b8ef?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(10),
     amenities: ["Free Wi-Fi", "Air conditioning", "Flat-screen TV"],
     capacity: 2,
     status: "needs_cleaning",
@@ -190,10 +235,7 @@ export const rooms: Room[] = [
     description:
       "A bright deluxe room finished in soft ivory tones, with a king bed and a walk-in wardrobe.",
     price: 760,
-    images: [
-      "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=1200&q=80",
-      "https://images.unsplash.com/photo-1615873968403-89e068629265?auto=format&fit=crop&w=1200&q=80",
-    ],
+    images: roomImages(11),
     amenities: ["Free Wi-Fi", "Air conditioning", "Mini bar", "Walk-in wardrobe"],
     capacity: 2,
     status: "available",
@@ -217,6 +259,7 @@ export const bookings: Booking[] = [
     status: "confirmed",
     qrCode: "RML-8K2Q",
     bookedAt: isoDateOffset(-3),
+    paymentMethod: "card",
   },
   {
     id: "booking-2",
@@ -233,6 +276,7 @@ export const bookings: Booking[] = [
     status: "confirmed",
     qrCode: "RML-4X9K",
     bookedAt: isoDateOffset(-5),
+    paymentMethod: "mobile_money",
     vehiclePlate: "GT 4521-24",
   },
   {
@@ -246,10 +290,12 @@ export const bookings: Booking[] = [
     checkOut: isoDateOffset(2),
     nights: 3,
     totalAmount: 4350,
-    depositPaid: 870,
+    depositPaid: 4350,
     status: "checked_in",
     qrCode: "RML-2M7P",
     bookedAt: isoDateOffset(-6),
+    paymentMethod: "cash",
+    checkedInAt: isoDateTimeOffset(-1, 14, 32),
   },
   {
     id: "booking-4",
@@ -262,11 +308,13 @@ export const bookings: Booking[] = [
     checkOut: isoDateOffset(1),
     nights: 3,
     totalAmount: 6750,
-    depositPaid: 1350,
+    depositPaid: 6750,
     status: "checked_in",
     qrCode: "RML-9V3L",
     bookedAt: isoDateOffset(-9),
+    paymentMethod: "bank_transfer",
     vehiclePlate: "GR 1187-23",
+    checkedInAt: isoDateTimeOffset(-2, 13, 10),
   },
   {
     id: "booking-5",
@@ -279,10 +327,13 @@ export const bookings: Booking[] = [
     checkOut: isoDateOffset(-1),
     nights: 2,
     totalAmount: 920,
-    depositPaid: 184,
+    depositPaid: 920,
     status: "checked_out",
     qrCode: "RML-6H1D",
     bookedAt: isoDateOffset(-12),
+    paymentMethod: "card",
+    checkedInAt: isoDateTimeOffset(-3, 15, 20),
+    checkedOutAt: isoDateTimeOffset(-1, 11, 5),
   },
   {
     id: "booking-6",
@@ -295,10 +346,13 @@ export const bookings: Booking[] = [
     checkOut: isoDateOffset(-3),
     nights: 2,
     totalAmount: 990,
-    depositPaid: 198,
+    depositPaid: 990,
     status: "checked_out",
     qrCode: "RML-3T8N",
     bookedAt: isoDateOffset(-15),
+    paymentMethod: "mobile_money",
+    checkedInAt: isoDateTimeOffset(-5, 16, 0),
+    checkedOutAt: isoDateTimeOffset(-3, 10, 45),
   },
   {
     id: "booking-7",
@@ -315,6 +369,7 @@ export const bookings: Booking[] = [
     status: "confirmed",
     qrCode: "RML-5F6R",
     bookedAt: isoDateOffset(-1),
+    paymentMethod: "cash",
   },
   {
     id: "booking-8",
@@ -331,6 +386,7 @@ export const bookings: Booking[] = [
     status: "cancelled",
     qrCode: "RML-7QXA",
     bookedAt: isoDateOffset(-8),
+    paymentMethod: "bank_transfer",
   },
   {
     id: "booking-9",
@@ -347,6 +403,7 @@ export const bookings: Booking[] = [
     status: "confirmed",
     qrCode: "RML-1A2B",
     bookedAt: isoDateOffset(-2),
+    paymentMethod: "card",
   },
   {
     id: "booking-10",
@@ -363,6 +420,7 @@ export const bookings: Booking[] = [
     status: "confirmed",
     qrCode: "RML-3C4D",
     bookedAt: isoDateOffset(-1),
+    paymentMethod: "mobile_money",
   },
   {
     id: "booking-11",
@@ -379,6 +437,7 @@ export const bookings: Booking[] = [
     status: "confirmed",
     qrCode: "RML-5E6F",
     bookedAt: isoDateOffset(-1),
+    paymentMethod: "cash",
   },
   {
     id: "booking-12",
@@ -395,6 +454,7 @@ export const bookings: Booking[] = [
     status: "confirmed",
     qrCode: "RML-7G8H",
     bookedAt: isoDateOffset(-1),
+    paymentMethod: "bank_transfer",
   },
   {
     id: "booking-13",
@@ -411,6 +471,75 @@ export const bookings: Booking[] = [
     status: "confirmed",
     qrCode: "RML-9I0J",
     bookedAt: isoDateOffset(-1),
+    paymentMethod: "card",
+  },
+  {
+    id: "booking-14",
+    guestName: "Efua Boateng",
+    guestEmail: "efua.boateng@example.com",
+    guestPhone: "+233 24 111 2233",
+    roomId: "room-6",
+    roomName: "Terrace Suite",
+    checkIn: isoDateOffset(0),
+    checkOut: isoDateOffset(2),
+    nights: 2,
+    totalAmount: 3200,
+    depositPaid: 640,
+    status: "confirmed",
+    qrCode: "RML-3K4L",
+    bookedAt: isoDateOffset(-2),
+    paymentMethod: "mobile_money",
+  },
+  {
+    id: "booking-15",
+    guestName: "Kwesi Owusu",
+    guestEmail: "kwesi.owusu@example.com",
+    guestPhone: "+233 20 222 3344",
+    roomId: "room-1",
+    roomName: "Harbour Standard",
+    checkIn: isoDateOffset(0),
+    checkOut: isoDateOffset(1),
+    nights: 1,
+    totalAmount: 480,
+    depositPaid: 96,
+    status: "confirmed",
+    qrCode: "RML-5M6N",
+    bookedAt: isoDateOffset(-3),
+    paymentMethod: "cash",
+  },
+  {
+    id: "booking-16",
+    guestName: "Abena Frimpong",
+    guestEmail: "abena.frimpong@example.com",
+    guestPhone: "+233 26 444 5566",
+    roomId: "room-11",
+    roomName: "Palm Standard",
+    checkIn: isoDateOffset(0),
+    checkOut: isoDateOffset(3),
+    nights: 3,
+    totalAmount: 1485,
+    depositPaid: 297,
+    status: "confirmed",
+    qrCode: "RML-7O8P",
+    bookedAt: isoDateOffset(-4),
+    paymentMethod: "bank_transfer",
+  },
+  {
+    id: "booking-17",
+    guestName: "Kofi Ansah",
+    guestEmail: "kofi.ansah@example.com",
+    guestPhone: "+233 27 555 6677",
+    roomId: "room-8",
+    roomName: "Orchid Deluxe",
+    checkIn: isoDateOffset(0),
+    checkOut: isoDateOffset(2),
+    nights: 2,
+    totalAmount: 1620,
+    depositPaid: 324,
+    status: "confirmed",
+    qrCode: "RML-9Q0R",
+    bookedAt: isoDateOffset(-2),
+    paymentMethod: "card",
   },
 ]
 

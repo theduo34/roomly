@@ -16,6 +16,25 @@ export function formatDate(date: string | Date): string {
   }).format(new Date(date))
 }
 
+export function formatOrdinalDate(date: string | Date, monthStyle: "long" | "short" = "long"): string {
+  const d = new Date(date)
+  const day = d.getDate()
+  const suffix =
+    day % 10 === 1 && day !== 11 ? "st" : day % 10 === 2 && day !== 12 ? "nd" : day % 10 === 3 && day !== 13 ? "rd" : "th"
+  const month = new Intl.DateTimeFormat("en-GB", { month: monthStyle }).format(d)
+  return `${day}${suffix} ${month} ${d.getFullYear()}`
+}
+
+export function formatDateTime(date: string | Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date))
+}
+
 export function calculateNights(checkIn: string, checkOut: string): number {
   const start = new Date(checkIn)
   const end = new Date(checkOut)
